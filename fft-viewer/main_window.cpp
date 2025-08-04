@@ -92,8 +92,15 @@ void main_window::calculateFFT()
         cv::dft(input, output, cv::DFT_COMPLEX_OUTPUT | cv::DFT_SCALE);
         cv::split(output, planes);
         cv::magnitude(planes[0], planes[1], magnitude);
-        std::for_each(magnitude.begin<double>(), magnitude.begin<double>() + N / 2,
-                      [this, &fft_points](double a) { fft_points.push_back(QPointF(fft_points.size(), a)); });
+        std::for_each(magnitude.begin<double>(), magnitude.begin<double>() + N / 2, [this, &fft_points](double a)
+        {
+            double value;
+            if (ui->cbScale->currentIndex() == 1)
+                value = 20 * log10(a);
+            else
+                value = a / N;
+            fft_points.push_back(QPointF(fft_points.size(), value));
+        });
 
         if (ui->cbSuppressDC->isChecked())
             fft_points[0] = QPointF(0, 0);
