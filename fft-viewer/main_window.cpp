@@ -95,6 +95,9 @@ void main_window::calculateFFT()
         std::for_each(magnitude.begin<double>(), magnitude.begin<double>() + N / 2,
                       [this, &fft_points](double a) { fft_points.push_back(QPointF(fft_points.size(), a)); });
 
+        if (ui->cbSuppressDC->isChecked())
+            fft_points[0] = QPointF(0, 0);
+
         min = (*std::min_element(fft_points.begin(), fft_points.end(), [](QPointF& a, QPointF& b) { return a.y() < b.y(); })).y();
         max = (*std::max_element(fft_points.begin(), fft_points.end(), [](QPointF& a, QPointF& b) { return a.y() < b.y(); })).y();
         if (min < _min)
@@ -150,7 +153,6 @@ void main_window::on_pushButton_clicked()
 
 void main_window::on_txtFs_textChanged(const QString &arg1)
 {
-    chid id;
     bool ok;
 
     ui->cbEnable->setChecked(0);
@@ -169,6 +171,9 @@ void main_window::on_txtN_textChanged(const QString &arg1)
     chid id;
     bool ok;
     bool eca = true;
+
+    if (arg1.isEmpty())
+        return;
 
     double samples = arg1.toUInt(&ok);
     if (!ok) {
