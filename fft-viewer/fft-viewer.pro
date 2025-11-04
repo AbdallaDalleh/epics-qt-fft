@@ -25,10 +25,12 @@ FORMS += \
 #    ../widget/fft_viewer.ui \
     main_window.ui
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+TARGET           = fft-viewer
+QMAKE_DISTCLEAN += $$(HOME)/bin/$$TARGET
+QMAKE_CXXFLAGS  += -ggdb
+
+target.path = $$(HOME)/bin
+INSTALLS += target
 
 #SUBDIRS += \
 #    ../widget/fft-widget.pro
