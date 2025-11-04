@@ -61,7 +61,14 @@
       <item>
        <widget class="QCheckBox" name="cbSuppressDC">
         <property name="text">
-         <string>Suppress DC ?</string>
+         <string>Suppress DC (0 Hz)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="cbPower">
+        <property name="text">
+         <string>Power Spectrum</string>
         </property>
        </widget>
       </item>
@@ -98,31 +105,6 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <item>
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Post-Processing</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="cbScale">
-          <item>
-           <property name="text">
-            <string>Normalize by N</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Power Spectrum</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
        <widget class="QPushButton" name="pushButton">
         <property name="text">
          <string>Update Sources</string>
@@ -133,6 +115,13 @@
        <widget class="QCheckBox" name="cbEnable">
         <property name="text">
          <string>Enable</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblStats">
+        <property name="text">
+         <string/>
         </property>
        </widget>
       </item>

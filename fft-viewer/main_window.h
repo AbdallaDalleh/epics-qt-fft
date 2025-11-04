@@ -29,9 +29,9 @@ private slots:
 
     void on_pushButton_clicked();
 
-    void on_txtFs_textChanged(const QString &arg1);
+    void on_txtN_returnPressed();
 
-    void on_txtN_textChanged(const QString &arg1);
+    void on_txtFs_returnPressed();
 
 private:
     Ui::main_window *ui;
@@ -48,8 +48,8 @@ private:
 
     bool m_enable;
     int N = -1;
-    int Fs;
+    int Fs = -1;
 
-    QPen colors[MAX_SOURCES] = {QPen(Qt::red), QPen(Qt::blue), QPen(Qt::green), QPen(Qt::yellow)};
+    QPen colors[MAX_SOURCES] = {QPen(Qt::red), QPen(Qt::blue), QPen(Qt::darkGreen), QPen(Qt::yellow)};
 };
 #endif // MAIN_WINDOW_H

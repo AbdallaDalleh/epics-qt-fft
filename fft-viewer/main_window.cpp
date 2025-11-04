@@ -48,6 +48,7 @@ main_window::~main_window()
 
 void main_window::calculateFFT()
 {
+    int status;
     int index = 0;
     for(index = 0; index < MAX_SOURCES; index++) {
         if (pvs[index].isEmpty())
@@ -56,8 +57,12 @@ void main_window::calculateFFT()
             ca_search(pvs[index].toStdString().c_str(), &ids[index]);
     }
 
-    if (ca_pend_io(2) != ECA_NORMAL)
+    status = ca_pend_io(1);
+    if (status != ECA_NORMAL) {
+        QMessageBox::information(this, "CA Search Error", QString::asprintf("Error code: %d | %d", status, ECA_TIMEOUT));
+        ui->cbEnable->setChecked(0);
         return;
+    }
 
     index = 0;
     for(index = 0; index < MAX_SOURCES; index++) {
@@ -69,8 +74,12 @@ void main_window::calculateFFT()
             ca_array_get(DBR_DOUBLE, N, ids[index], rawData[index].data());
     }
 
-    if (ca_pend_io(2) != ECA_NORMAL)
+    status = ca_pend_io(1);
+    if (status != ECA_NORMAL) {
+        QMessageBox::information(this, "CA Error", QString::asprintf("CA Read Error: %s",  ca_message(status)));
+        ui->cbEnable->setChecked(0);
         return;
+    }
 
     index = 0;
     double _min = std::numeric_limits<double>::max();
@@ -78,6 +87,9 @@ void main_window::calculateFFT()
     double min;
     double max;
 
+    QString info = "";
+    info += QString::asprintf("\nFrequency resolution (Fs/N): %.3f Hz\n", static_cast<double>(Fs) / N);
+    info += QString::asprintf("Nyquist Frequency: %d Hz\n\n", Fs / 2);
     for(index = 0; index < MAX_SOURCES; index++) {
         std::vector<double> data = rawData[index];
         if (pvs[index].isEmpty())
@@ -94,12 +106,10 @@ void main_window::calculateFFT()
         cv::magnitude(planes[0], planes[1], magnitude);
         std::for_each(magnitude.begin<double>(), magnitude.begin<double>() + N / 2, [this, &fft_points](double a)
         {
-            double value;
-            if (ui->cbScale->currentIndex() == 1)
+            double value = a;
+            if (ui->cbPower->isChecked())
                 value = 20 * log10(a);
-            else
-                value = a / N;
-            fft_points.push_back(QPointF(fft_points.size(), value));
+            fft_points.push_back(QPointF(fft_points.size() * static_cast<double>(Fs) / N, value));
         });
 
         if (ui->cbSuppressDC->isChecked())
@@ -112,12 +122,19 @@ void main_window::calculateFFT()
         if (max > _max)
             _max = max;
 
+        int x_max = (*std::find_if(fft_points.begin(), fft_points.end(), [max](QPointF point) {
+            return point.y() == max;
+        })).x();
+
+        info += QString::asprintf("%s\nPeak = %.3f at %d Hz\n\n", pvs[index].toStdString().c_str(), max, x_max);
+
         series[index]->replace(fft_points);
     }
 
-    this->xAxis->setRange(0, N / 2 - 1);
+    xAxis->setRange(0, Fs / 2 - 1);
     yAxis->setRange(_min, _max);
     ui->plot->update();
+    ui->lblStats->setText(info);
 }
 
 void main_window::on_cbEnable_stateChanged(int arg1)
@@ -152,48 +169,39 @@ void main_window::on_pushButton_clicked()
         }
     }
 
+    on_txtFs_returnPressed();
+    on_txtN_returnPressed();
     if (N <= 0)
         QMessageBox::warning(this, "Error", "Set the number of samples first.");
+    else if(Fs <= 0)
+        QMessageBox::warning(this, "Error", "Set proper sampling frequency first.");
     else
         ui->cbEnable->setChecked(1);
 }
 
-void main_window::on_txtFs_textChanged(const QString &arg1)
+void main_window::on_txtN_returnPressed()
 {
-    bool ok;
-
-    ui->cbEnable->setChecked(0);
-    double frequency = arg1.toDouble(&ok);
-    if (!ok) {
-        QMessageBox::warning(this, "Error", "Invalid sampling frequency.");
-        return;
-    }
-
-    Fs = frequency;
-    ui->cbEnable->setChecked(1);
-}
-
-void main_window::on_txtN_textChanged(const QString &arg1)
-{
+    QString arg;
     chid id;
     bool ok;
     bool eca = true;
 
-    if (arg1.isEmpty())
+    arg = ui->txtN->text();
+    if (arg.isEmpty())
         return;
 
-    double samples = arg1.toUInt(&ok);
+    double samples = arg.toUInt(&ok);
     if (!ok) {
-        ca_search(arg1.toStdString().c_str(), &id);
-        if (ca_pend_io(2) != ECA_NORMAL)
+        ca_search(arg.toStdString().c_str(), &id);
+        if (ca_pend_io(0.5) != ECA_NORMAL)
             eca = false;
 
         ca_get(DBR_LONG, id, &samples);
-        if (ca_pend_io(2) != ECA_NORMAL)
+        if (ca_pend_io(0.5) != ECA_NORMAL)
             eca = false;
 
         if (!eca) {
-            QMessageBox::warning(this, "Error", "Invalid number of samples.");
+            QMessageBox::warning(this, "Error", "Invalid number of samples from CA.");
             return;
         }
     }
@@ -201,3 +209,14 @@ void main_window::on_txtN_textChanged(const QString &arg1)
     N = samples;
 }
 
+void main_window::on_txtFs_returnPressed()
+{
+    bool ok;
+    QString arg = ui->txtFs->text();
+
+    double frequency = arg.toDouble(&ok);
+    if (!ok)
+        return;
+
+    Fs = frequency;
+}
